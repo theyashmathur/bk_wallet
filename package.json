@@ -1,5 +1,5 @@
 {
-  "name": "bk_wallet",
+  "name": "global_wallet",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -7,5 +7,16 @@
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.14.3",
+    "nodemailer": "^7.0.3"
+  }
 }
