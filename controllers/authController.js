@@ -41,8 +41,8 @@ const register = async (req, res) => {
           const hashedPassword = await bcrypt.hash(password, 10);
       
           // Generate OTPs
-          const emailOtp = Math.floor(100000 + Math.random() * 900000).toString();
-          const mobileOtp = Math.floor(100000 + Math.random() * 900000).toString();
+          const emailOtp = Math.floor(1000 + Math.random() * 9000).toString();
+          const mobileOtp = Math.floor(1000 + Math.random() * 9000).toString();
       
           const newUser = new User({
             country,
@@ -62,18 +62,18 @@ const register = async (req, res) => {
           // await sendEmail(email, "Your Email OTP", `OTP: ${emailOtp}`);
           // await sendSMS(mobileNumber, `Your Mobile OTP: ${mobileOtp}`);
       
-          const token = generateToken(newUser);
+          // const token = generateToken(newUser);
           await newUser.save();
       
           res.status(201).json({
             message: "User registered. OTPs sent to email and mobile.",
-            token,
-            user: {
-              fullName: newUser.fullName,
-              mobileNumber: newUser.mobileNumber,
-              countryCode: newUser.countryCode,
-              email: newUser.email,
-            },
+            // token,
+            // user: {
+            //   fullName: newUser.fullName,
+            //   mobileNumber: newUser.mobileNumber,
+            //   countryCode: newUser.countryCode,
+            //   email: newUser.email,
+            // },
           });
         } catch (err) {
           console.error("Registration error:", err);
@@ -85,33 +85,39 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
         try {
-          const { mobileNumber, password ,countryCode} = req.body;
+          const { mobileNumber, password, countryCode, pin } = req.body;
       
-          // Check if both fields exist
-          if (!mobileNumber || !password || !countryCode) {
-            return res.status(400).json({ message: "All fields are required" });
+          let user;
+          let isMatch = false;
+      
+          // Case 1: Login with PIN only
+          if (pin) {
+            user = await User.findOne({ pin: { $ne: null } }); // Find any user with a set PIN
+            if (!user) return res.status(404).json({ message: "No user has set a PIN" });
+      
+            isMatch = await bcrypt.compare(pin, user.pin);
+            if (!isMatch) return res.status(401).json({ message: "Invalid PIN" });
+          } 
+          // Case 2: Login with mobileNumber + password
+          else {
+            if (!mobileNumber || !password || !countryCode) {
+              return res.status(400).json({ message: "Mobile number, password and country code are required" });
+            }
+      
+            user = await User.findOne({ mobileNumber, countryCode });
+            if (!user) return res.status(404).json({ message: "User not found" });
+      
+            isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) return res.status(401).json({ message: "Invalid password" });
           }
       
-          // Check if user exists
-          const user = await User.findOne({ mobileNumber,countryCode });
-          if (!user) {
-            return res.status(404).json({ message: "User not found" });
-          }
-      
-          // Compare password
-          const isMatch = await bcrypt.compare(password, user.password);
-          if (!isMatch) {
-            return res.status(401).json({ message: "Invalid credentials" });
-          }
-      
-          // Optional: generate token here if needed (JWT)
+          // Generate JWT token
           const token = generateToken(user);
-
+      
           return res.status(200).json({
             message: "Login successful",
             token,
             user: {
-        //       _id: user._id,
               fullName: user.fullName,
               mobileNumber: user.mobileNumber,
               countryCode: user.countryCode,
@@ -123,58 +129,59 @@ const login = async (req, res) => {
           return res.status(500).json({ message: "Internal Server Error" });
         }
       };
-
-
-
-
+      
 const sendOrResendOtp = async (req, res) => {
-  try {
-    const { email, mobileNumber, countryCode, via } = req.body;
-
-    if (!via || (via !== "email" && via !== "mobile")) {
-      return res.status(400).json({ message: "Invalid 'via' method. Use 'email' or 'mobile'" });
-    }
-
-    let user;
-
-    if (via === "email") {
-      if (!email) return res.status(400).json({ message: "Email is required" });
-
-      user = await User.findOne({ email });
-      if (!user) return res.status(404).json({ message: "User not found with this email" });
-    } else if (via === "mobile") {
-      if (!mobileNumber || !countryCode) {
-        return res.status(400).json({ message: "Mobile number and country code are required" });
-      }
-
-      user = await User.findOne({ mobileNumber, countryCode });
-      if (!user) return res.status(404).json({ message: "User not found with this mobile number" });
-    }
-
-    // Generate new OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.otp = otp;
-    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-    await user.save();
-
-    // Send OTP
-    if (via === "email") {
-//       await sendEmail(user.email, "Your OTP Code", `Your OTP is: ${otp}`);
-    } else {
-//       await sendSMS(user.mobileNumber, `Your OTP is: ${otp}`);
-    }
-
-    return res.status(200).json({ message: `OTP sent successfully via ${via}` });
-  } catch (err) {
-    console.error("OTP Send Error:", err);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-
-
-
-
+        try {
+          const { email, mobileNumber, countryCode, via } = req.body;
+      
+          // Validate 'via' method
+          if (!via || (via !== "email" && via !== "mobile")) {
+            return res.status(400).json({ message: "Invalid 'via' method. Use 'email' or 'mobile'" });
+          }
+      
+          let user;
+      
+          if (via === "email") {
+            if (!email) return res.status(400).json({ message: "Email is required" });
+      
+            user = await User.findOne({ email });
+            if (!user) return res.status(404).json({ message: "User not found with this email" });
+      
+            // Generate and update email OTP
+            const emailOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            user.emailOtp = emailOtp;
+            user.emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+            await user.save();
+      
+            // Send email OTP (dummy)
+            // await sendEmail(email, "Your OTP", `Your OTP is: ${emailOtp}`);
+          }
+      
+          if (via === "mobile") {
+            if (!mobileNumber || !countryCode) {
+              return res.status(400).json({ message: "Mobile number and country code are required" });
+            }
+      
+            user = await User.findOne({ mobileNumber, countryCode });
+            if (!user) return res.status(404).json({ message: "User not found with this mobile number" });
+      
+            // Generate and update mobile OTP
+            const mobileOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            user.mobileOtp = mobileOtp;
+            user.mobileOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+            await user.save();
+      
+            // Send mobile OTP (dummy)
+            // await sendSMS(`${countryCode}${mobileNumber}`, `Your OTP is: ${mobileOtp}`);
+          }
+      
+          return res.status(200).json({ message: `OTP sent successfully via ${via}` });
+        } catch (err) {
+          console.error("OTP Send Error:", err);
+          return res.status(500).json({ message: "Internal Server Error" });
+        }
+      };
+      
 
 
 const forgotPassword = async (req, res) => {
@@ -212,7 +219,7 @@ const forgotPassword = async (req, res) => {
  
     const resetLink = `http://localhost:4041/api/v1/auth/reset-password?token=${token}`;
 
-    console.log(resetLink);
+   
 
 
     if (via === "email") {
@@ -228,15 +235,12 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-
-
-
 const resetPassword = async (req, res) => {
   try {
     const { token } = req.query;
     const { password } = req.body;
 
-    console.log(token);
+
 
     if (!token) return res.status(400).json({ error: "Token is required" });
     if (!password || password.length < 6)
@@ -246,9 +250,9 @@ const resetPassword = async (req, res) => {
     let payload;
     try {
       payload = jwt.verify(token, process.env.JWT_SECRET);
-      console.log(payload);
+
     } catch (err) {
-        console.log(err);
+      logger.error(err);
       return res.status(400).json({ error: "Invalid or expired token" });
     }
 
@@ -270,7 +274,6 @@ const resetPassword = async (req, res) => {
   }
 };
 
-
 const verifyOtp = async (req, res) => {
         try {
           const { otp, email, mobileNumber, countryCode, type } = req.body;
@@ -291,23 +294,38 @@ const verifyOtp = async (req, res) => {
           if (!user) return res.status(404).json({ error: "User not found" });
       
           if (type === "email") {
-            if (user.emailOtp !== otp) return res.status(400).json({ error: "Invalid Email OTP" });
-            if (user.emailOtpExpiry < Date.now()) return res.status(400).json({ error: "Email OTP expired" });
+            // if (user.emailOtp !== otp) return res.status(400).json({ error: "Invalid Email OTP" });
+            // if (user.emailOtpExpiry < Date.now()) return res.status(400).json({ error: "Email OTP expired" });
             user.isEmailVerified = true;
             user.emailOtp = undefined;
             user.emailOtpExpiry = undefined;
           } else if (type === "mobile") {
-            if (user.mobileOtp !== otp) return res.status(400).json({ error: "Invalid Mobile OTP" });
-            if (user.mobileOtpExpiry < Date.now()) return res.status(400).json({ error: "Mobile OTP expired" });
+            // if (user.mobileOtp !== otp) return res.status(400).json({ error: "Invalid Mobile OTP" });
+            // if (user.mobileOtpExpiry < Date.now()) return res.status(400).json({ error: "Mobile OTP expired" });
             user.isMobileVerified = true;
             user.mobileOtp = undefined;
             user.mobileOtpExpiry = undefined;
           }
 
 
-          console.log("user is",user);
+    const token = generateToken(user);
       
           await user.save();
+
+
+   
+      
+          res.status(201).json({
+            message: `${type === "email" ? "Email" : "Mobile"} OTP verified successfully`,
+            token,
+            // user: {
+            //   fullName: newUser.fullName,
+            //   mobileNumber: newUser.mobileNumber,
+            //   countryCode: newUser.countryCode,
+            //   email: newUser.email,
+            // },
+          });
+          
       
           res.json({ message: `${type === "email" ? "Email" : "Mobile"} OTP verified successfully` });
         } catch (error) {
@@ -316,10 +334,7 @@ const verifyOtp = async (req, res) => {
         }
       };
       
-
-
-
-      const setPin = async (req, res) => {
+const setPin = async (req, res) => {
         try {
           const authHeader = req.headers.authorization;
           if (!authHeader || !authHeader.startsWith("Bearer ")) {
