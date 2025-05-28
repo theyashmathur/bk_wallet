@@ -29,8 +29,29 @@ app.use("/api/v1", authRoutes);
 
 
 // Connect to DB and start server
-connectDB().then(() => {
+ connectDB().then(async() => {
+
+  const userId = "admin";
+
+  // await createInitialWallet(userId);      // To be called once to create admin wallet
+  // await createAddressForOwner(userId, mnemonic, 0); // To be called once to create first address
+  await generateNextAddress(userId);      // Reusable to create more addresses
   app.listen(process.env.PORT, () =>
   logger.info(`🚀 Server running on http://localhost:${process.env.PORT}`)
   );
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
