@@ -1,8 +1,9 @@
-import { mongoose } from "mongoose";
-import { ethers } from "ethers";
-import WalletAddress from "./wallet/schema/WalletAddress.js";
-import { ERC20_ABI, TOKENS } from "./constants.js";
-import dotenv from "dotenv";
+
+const mongoose = require("mongoose");
+const ethers = require('ethers');
+const  WalletAddress =  require('./../models/WalletAddress');
+const { ERC20_ABI, TOKENS } = require('./constants.js') 
+const dotenv = require("dotenv");
 dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI;

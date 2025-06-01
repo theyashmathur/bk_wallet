@@ -371,7 +371,17 @@ const setPin = async (req, res) => {
           res.status(500).json({ error: "Internal Server Error" });
         }
       };
-      
+
+
+const getProfile = async(req,res)=>{
+  const user = req.decoded;
+  res.json({message:"Success"});
+}
+
+
+const updateProfile = async(req,res)=>{
+  res.json({message:"Success"});
+}
 
 
 
@@ -379,5 +389,4 @@ const setPin = async (req, res) => {
 
 
 
-
-module.exports = { register,login,sendOrResendOtp,forgotPassword,resetPassword ,verifyOtp,setPin};
+module.exports = { register,login,sendOrResendOtp,forgotPassword,resetPassword ,verifyOtp,setPin,getProfile,updateProfile};

@@ -3,11 +3,14 @@ const app = express();
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
+const uploadRoute = require('./routes/upload');
 dotenv.config();
 const logger = require('./utils/logger');
 const morgan = require('morgan');
 const fs = require('fs');
 const path = require('path');
+const {createInitialWallet} = require('./utils/walletGenerator');
+const {createAddressForOwner,generateNextAddress} = require('./utils/addressCreator');
 
 
 // Create a write stream for access logs
@@ -22,12 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1", authRoutes);
-
-
-
-
-
-
+app.use("/api/v1",uploadRoute);
 // Connect to DB and start server
  connectDB().then(async() => {
 
@@ -35,7 +33,7 @@ app.use("/api/v1", authRoutes);
 
   // await createInitialWallet(userId);      // To be called once to create admin wallet
   // await createAddressForOwner(userId, mnemonic, 0); // To be called once to create first address
-  await generateNextAddress(userId);      // Reusable to create more addresses
+  // await generateNextAddress(userId);      // Reusable to create more addresses
   app.listen(process.env.PORT, () =>
   logger.info(`🚀 Server running on http://localhost:${process.env.PORT}`)
   );

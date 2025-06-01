@@ -1,23 +1,27 @@
-import crypto from "crypto";
-import dotenv from "dotenv";
+const crypto = require('crypto');
+const dotenv = require("dotenv");
 dotenv.config();
 
 const algorithm = "aes-256-gcm";
-const key = process.env.ENCRYPTION_KEY;
-const iv_length = 12; // For GCM, the IV length is 12 bytes
+const iv_length = 12; // For GCM
 
-export const encrypt = (text) => {
+const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+
+if (!key || key.length !== 32) {
+    throw new Error("ENCRYPTION_KEY must be a 32-byte hex string");
+}
+
+const encrypt = (text) => {
     const iv = crypto.randomBytes(iv_length);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
 
     const encrypted = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
-    // Return IV, encrypted data, and auth tag
     return Buffer.concat([iv, authTag, encrypted]).toString("base64");
 }
 
-export const decrypt = (encryptedBase64) => {
+const decrypt = (encryptedBase64) => {
     const data = Buffer.from(encryptedBase64, 'base64');
     const iv = data.subarray(0, iv_length);
     const encrypted = data.subarray(iv_length, data.length - 16);
@@ -29,3 +33,5 @@ export const decrypt = (encryptedBase64) => {
     const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
     return decrypted.toString('utf8');
 }
+
+module.exports = { encrypt, decrypt };

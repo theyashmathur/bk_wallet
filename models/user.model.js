@@ -16,6 +16,9 @@ const userSchema = new mongoose.Schema({
   isMobileVerified: { type: Boolean, default: false },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  referralCode:{type:String,unique:true},
+  referralLink:{type:String,unique:true},
+  profilePhoto:{type:String},
   pin : {
     type : String
   }

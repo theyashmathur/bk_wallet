@@ -10,4 +10,6 @@ router.post("/auth/forgot-password", forgotPassword);
 router.post("/auth/reset-password", resetPassword);
 router.post('/auth/verify-otp',verifyOtp);
 router.post('/auth/set-pin',authMiddleware,setPin);
+router.get('/auth/profile',authMiddleware,getProfile);
+router.put('/auth/update-profile',authMiddleware,updateProfile);
 module.exports = router;

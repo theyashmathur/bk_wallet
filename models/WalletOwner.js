@@ -1,6 +1,6 @@
-import { mongoose } from "mongoose";
+const mongoose = require("mongoose");
 
-const WalletOwnerSchema = new Schema({
+const WalletOwnerSchema = new mongoose.Schema({
     userId: { type: String, required: true }, // associated to ADMIN
     walletAddress: { type: String, required: true },
     privateKey: { type: String, required: true },
@@ -8,5 +8,9 @@ const WalletOwnerSchema = new Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-const WalletOwner =  mongoose.model("WalletOwner", WalletOwnerSchema);
-export default WalletOwner;
+module.exports =  mongoose.model("WalletOwner", WalletOwnerSchema);
+
+
+
+
+

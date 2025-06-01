@@ -1,4 +1,4 @@
-import { mongoose } from 'mongoose';
+const mongoose = require("mongoose");
 
 const WalletAddressSchema = new mongoose.Schema({
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'WalletOwner' },
@@ -10,5 +10,4 @@ const WalletAddressSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-const WalletAddress = mongoose.model("WalletAddress", WalletAddressSchema);
-export default WalletAddress;
+module.exports =  mongoose.model("WalletAddress", WalletAddressSchema);
