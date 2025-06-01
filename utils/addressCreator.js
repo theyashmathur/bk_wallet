@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const WalletOwner = require('./../models/WalletOwner');
 const WalletAddress = require('./../models/WalletAddress');
-const {HDNodeWallet, Wallet} = require('ethers');
+const ethers = require('ethers');
 const {encrypt,decrypt} = require('./encryption')
 
 
@@ -18,24 +18,24 @@ const createAddressForOwner = async (ownerId, mnemonic, index) => {
         throw new Error("Wallet owner not found");
     }
 
-    const derivationPath = `m/44'/60'/0'/0/${index}`;
-    const hdNode = ethers.Wallet.fromPhrase(mnemonic).derivePath(derivationPath);
-    const wallet = new ethers.Wallet(hdNode.privateKey);
+    // Create HD wallet from mnemonic
+    const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
+    // Derive child wallet at specified index
+    const wallet = hdNode.deriveChild(index);
 
     // Encrypt the private key before saving
     const encryptedPrivateKey = encrypt(wallet.privateKey);
 
-    await WalletAddress.create({
+    const address = await WalletAddress.create({
         ownerId,
         userId: owner.userId,
         address: wallet.address,
         privateKey: encryptedPrivateKey,
-        derivationPath,
+        derivationPath: `m/44'/60'/0'/0/${index}`,
         index
     });
 
-    console.log("wallet address created->>>",address);
-
+    console.log("wallet address created->>>", address);
     console.log(`Address ${index} generated and saved: ${wallet.address}`);
 };
 
