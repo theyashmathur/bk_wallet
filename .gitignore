@@ -15,8 +15,7 @@ pids/
 *.pid.lock
 
 # Environment variables
-.env
-.env.*.local
+
 
 # Coverage directory used by testing tools
 coverage/
