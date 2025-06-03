@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: Global Wallet API
+  version: 1.0.0
+servers:
+  - url: http://localhost:4041/api/v1
+  - url : http://apicug.quizkart.com/
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobileNumber:
+                  type: string
+                countryCode:
+                  type: string
+                password:
+                  type: string
+              required:
+                - mobileNumber
+                - countryCode
+                - password
+      responses:
+        '200':
+          description: Successful login
+  /auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                country:
+                  type: string
+                fullName:
+                  type: string
+                userName:
+                  type: string
+                email:
+                  type: string
+                mobileNumber:
+                  type: string
+                countryCode:
+                  type: string
+                password:
+                  type: string
+              required:
+                - fullName
+                - userName
+                - email
+                - mobileNumber
+                - countryCode
+                - password
+      responses:
+        '201':
+          description: User registered
+  /auth/forgot-password:
+    post:
+      summary: Send forgot password OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                via:
+                  type: string
+                  enum: [email, mobile]
+                email:
+                  type: string
+                mobileNumber:
+                  type: string
+                countryCode:
+                  type: string
+      responses:
+        '200':
+          description: OTP sent
+  /auth/send-otp:
+    post:
+      summary: Send or resend OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                via:
+                  type: string
+                  enum: [email, mobile]
+                email:
+                  type: string
+                mobileNumber:
+                  type: string
+                countryCode:
+                  type: string
+      responses:
+        '200':
+          description: OTP sent
+  /auth/verify-otp:
+    post:
+      summary: Verify OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                mobileNumber:
+                  type: string
+                otp:
+                  type: string
+                type:
+                  type: string
+                  enum: [email, mobile]
+      responses:
+        '200':
+          description: OTP verified
+  /auth/set-pin:
+    post:
+      summary: Set PIN
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pin:
+                  type: string
+      responses:
+        '200':
+          description: PIN set
+  /auth/reset-password:
+    post:
+      summary: Reset password using token
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Password reset successful
+  /auth/profile:
+    get:
+      summary: Get user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile fetched
+  /auth/update-profile:
+    post:
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                mobileNumber:
+                  type: string
+                countryCode:
+                  type: string
+                profilePhoto:
+                  type: string
+                password:
+                  type: string
+                pin:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+  /upload-image:
+    post:
+      summary: Upload image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Image uploaded
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

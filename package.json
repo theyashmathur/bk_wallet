@@ -23,6 +23,8 @@
     "multer": "^2.0.0",
     "node-mailjet": "^6.0.8",
     "nodemailer": "^7.0.3",
-    "winston": "^3.17.0"
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.17.0",
+    "yamljs": "^0.3.0"
   }
 }

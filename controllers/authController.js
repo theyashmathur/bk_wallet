@@ -6,6 +6,8 @@ const bcrypt = require("bcryptjs");
 const {generateToken }= require("../utils/generateToken"); 
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const {generateNextAddress} = require('./../utils/addressCreator')
+const mongoose = require('mongoose');
 
 
 const register = async (req, res) => {
@@ -63,7 +65,9 @@ const register = async (req, res) => {
           // await sendSMS(mobileNumber, `Your Mobile OTP: ${mobileOtp}`);
       
           // const token = generateToken(newUser);
-          await newUser.save();
+          const user = await newUser.save();
+          const userId = user._id;
+          await generateNextAddress(userId);  
       
           res.status(201).json({
             message: "User registered. OTPs sent to email and mobile.",
@@ -336,21 +340,24 @@ const verifyOtp = async (req, res) => {
       
 const setPin = async (req, res) => {
         try {
-          const authHeader = req.headers.authorization;
-          if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res.status(401).json({ error: "Authorization token missing or malformed" });
-          }
+          // const authHeader = req.headers.authorization;
+          // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          //   return res.status(401).json({ error: "Authorization token missing or malformed" });
+          // }
       
-          const token = authHeader.split(" ")[1];
-          let decoded;
-          try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
-          } catch (err) {
-            return res.status(401).json({ error: "Invalid or expired token" });
-          }
+          // const token = authHeader.split(" ")[1];
+          // let decoded;
+          // try {
+          //   decoded = jwt.verify(token, process.env.JWT_SECRET);
+          // } catch (err) {
+          //   return res.status(401).json({ error: "Invalid or expired token" });
+          // }
       
-          const userId = decoded.id; // Assuming you encoded user id as 'id' in JWT
-      
+          const userId = req.user._id;
+          if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: "Invalid user ID" });
+          } // Assuming you encoded user id as 'id' in JWT
+          console.log(userId,req.user)
           const { pin } = req.body;
           if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
             return res.status(400).json({ error: "PIN must be a 4-digit number" });
@@ -374,14 +381,64 @@ const setPin = async (req, res) => {
 
 
 const getProfile = async(req,res)=>{
-  const user = req.decoded;
-  res.json({message:"Success"});
+  const userId = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
+  const user = await User.findById(userId).select('country fullName userName email mobileNumber countryCode profilePhoto -_id');;
+
+  res.json({message:"Success",data:user});
 }
 
 
-const updateProfile = async(req,res)=>{
-  res.json({message:"Success"});
-}
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id; // coming from authMiddleware
+    const { email, mobileNumber, countryCode, profilePhoto, pin, password } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Check for email uniqueness if updated
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) return res.status(400).json({ message: "Email already in use" });
+      user.email = email;
+      user.isEmailVerified = false; // reset verification
+    }
+
+    // Check for mobile number uniqueness if updated
+    if (mobileNumber && mobileNumber !== user.mobileNumber) {
+      const existingMobile = await User.findOne({ mobileNumber });
+      if (existingMobile) return res.status(400).json({ message: "Mobile number already in use" });
+      user.mobileNumber = mobileNumber;
+      user.isMobileVerified = false; // reset verification
+    }
+
+    if (countryCode) user.countryCode = countryCode;
+    if (profilePhoto) user.profilePhoto = profilePhoto;
+
+    // Update and hash PIN
+    if (pin) {
+      const salt = await bcrypt.genSalt(10);
+      user.pin = await bcrypt.hash(pin, salt);
+    }
+
+    // Update and hash Password
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    await user.save();
+
+    res.status(200).json({ message: "Profile updated successfully" });
+  } catch (err) {
+    console.error("Update profile failed:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 
