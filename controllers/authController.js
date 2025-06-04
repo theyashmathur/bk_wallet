@@ -237,18 +237,18 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
  
-    const resetLink = `http://localhost:4041/api/v1/auth/reset-password?token=${token}`;
+    const resetLink = `http://64.227.133.77:4041/api/v1/auth/reset-password?token=${token}`;
 
    
 
 
     if (via === "email") {
-//       await sendEmail(user.email, "Password Reset", `Reset your password: ${resetLink}`);
+      // await sendEmail(user.email, "Password Reset", `Reset your password: ${resetLink}`);
     } else {
 //       await sendSMS(user.mobileNumber, `Reset your password: ${resetLink}`);
     }
 
-    return res.status(200).json({ message: `Reset link sent via ${via}` });
+    return res.status(200).json({ message: `Reset link sent via ${via}`,resetLink:resetLink });
   } catch (err) {
     console.error("Forgot Password Error:", err);
     return res.status(500).json({ message: "Internal Server Error" });
