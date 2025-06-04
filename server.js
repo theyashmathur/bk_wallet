@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const uploadRoute = require('./routes/upload');
+const walletRoutes = require('./routes/walletRoutes');
 dotenv.config();
 const logger = require('./utils/logger');
 const morgan = require('morgan');
@@ -28,6 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1", authRoutes);
 app.use("/api/v1",uploadRoute);
+app.use('/api/wallet', walletRoutes);
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Connect to DB and start server

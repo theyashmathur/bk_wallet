@@ -9,6 +9,19 @@ const jwt = require("jsonwebtoken");
 const {generateNextAddress} = require('./../utils/addressCreator')
 const mongoose = require('mongoose');
 
+function generateReferralCode(length = 8) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+function createReferralLink(referralCode, baseUrl = 'https://example.com/referral') {
+  return `${baseUrl}?code=${referralCode}`;
+}
+
 
 const register = async (req, res) => {
         try {
@@ -58,6 +71,9 @@ const register = async (req, res) => {
             emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
             mobileOtp,
             mobileOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+            referralCode : generateReferralCode,
+            referralLink : createReferralLink(generateReferralCode,)
+
           });
       
           // Send OTPs (dummy for now)
@@ -67,7 +83,7 @@ const register = async (req, res) => {
           // const token = generateToken(newUser);
           const user = await newUser.save();
           const userId = user._id;
-          await generateNextAddress(userId);  
+          await generateNextAddress('admin',userId);  
       
           res.status(201).json({
             message: "User registered. OTPs sent to email and mobile.",
@@ -386,7 +402,7 @@ const getProfile = async(req,res)=>{
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ error: "Invalid user ID" });
   }
-  const user = await User.findById(userId).select('country fullName userName email mobileNumber countryCode profilePhoto -_id');;
+  const user = await User.findById(userId).select('country fullName userName email mobileNumber pin password countryCode profilePhoto -_id');;
 
   res.json({message:"Success",data:user});
 }
@@ -394,7 +410,7 @@ const getProfile = async(req,res)=>{
 
 const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // coming from authMiddleware
+    const userId = req.user._id; // coming from authMiddleware
     const { email, mobileNumber, countryCode, profilePhoto, pin, password } = req.body;
 
     const user = await User.findById(userId);
