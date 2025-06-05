@@ -3,6 +3,7 @@ const app = express();
 const ethers = require('ethers');
 const WalletOwner = require('./../models/WalletOwner');
 const {createAddressForOwner} = require('./../utils/addressCreator')
+const WalletAddress = require('./../models/WalletAddress');
 const {encrypt} = require('./encryption');
 
 
@@ -11,6 +12,7 @@ const {encrypt} = require('./encryption');
 /// Should be used to bear gas fees for admin and hold NFTs
 /// @param {string} userId - admin user ID
 const createInitialWallet = async (userId) => {
+  //userid : Admin
   const existing = await WalletOwner.findOne({ userId });
   if (existing) {
       console.log("Wallet already exists.");
@@ -32,11 +34,23 @@ const createInitialWallet = async (userId) => {
       mnemonic
   });
 
-  console.log("owner wallet created here is the owner->> ",owner)
+  // const derivationPath = `m/44'/60'/0'/0/${index}`;
+  const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
 
-  await createAddressForOwner(owner._id, mnemonic, 0);
+   // const derivationPath = `m/44'/60'/0'/0/${index}`;
+   const wallet_2 = new ethers.Wallet(hdNode.privateKey);
 
-  console.log("Initial wallet and first address created.");
+   // Encrypt the private key before saving
+   const encryptedPrivateKey_2 = encrypt(wallet.privateKey);
+
+   await WalletAddress.create({
+       ownerId:owner._id,
+       userId: owner.userId,
+       address: wallet_2.address,
+       privateKey: encryptedPrivateKey_2,
+       derivationPath: `m/44'/60'/0'/0/${0}`,
+       index:0
+   });
 };
 
 

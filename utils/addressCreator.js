@@ -2,7 +2,8 @@ const express = require("express");
 const app = express();
 const WalletOwner = require('./../models/WalletOwner');
 const WalletAddress = require('./../models/WalletAddress');
-const ethers = require('ethers');
+const {ethers,Mnemonic} = require('ethers');
+
 const {encrypt,decrypt} = require('./encryption')
 
 
@@ -42,22 +43,49 @@ const createAddressForOwner = async (ownerId, mnemonic, index) => {
 
 /// @note: This function generates the next address for a given user
 const generateNextAddress = async (ownerId, userId) => {
-
+//ownerId : Admin , userId : newly generated userId
         // Checks if the userId for admin wallet is valid
-        const admin = await WalletOwner.findOne({ ownerId });
+        const owner = await WalletOwner.findOne({ userId:ownerId });
         
-        if(!admin) {
+        if(!owner) {
             console.log("Admin wallet not found.");
             return;
         }
     
-        const latest = await WalletAddress.find({ userId: userId })
+        const latest = await WalletAddress.find()
             .sort({ index: -1 })
             .limit(1);
-    
+        console.log("latest is ",latest)
         const nextIndex = latest.length ? latest[0].index + 1 : 0;
-    
-        await createAddressForOwner(userId, owner.mnemonic, nextIndex);
+        console.log("nextIndex->>",nextIndex)
+        // await createAddressForOwner(userId, owner.mnemonic, nextIndex);
+            // Get the owner to fetch userId
+
+    // const derivationPath = `m/44'/60'/0'/0/${index}`;
+  
+    const mnemonicObj = Mnemonic.fromPhrase(owner.mnemonic);
+    const hdRoot = ethers.HDNodeWallet.fromMnemonic(mnemonicObj);
+    const childNode = hdRoot.derivePath(`m/44'/60'/0'/0/${nextIndex}`);
+    const wallet = new ethers.Wallet(childNode.privateKey);
+    // Encrypt the private key before saving
+    const encryptedPrivateKey = encrypt(wallet.privateKey);
+
+   try {
+   const w_address =  await WalletAddress.create({
+        // ownerId,
+        ownerId: owner._id,  
+        userId:userId,
+        address: wallet.address,
+        privateKey: encryptedPrivateKey,
+        derivationPath: `m/44'/60'/0'/0/${nextIndex}`,
+        // nextIndex
+        index: nextIndex  
+    });
+
+    console.log(w_address);
+   }catch(err){
+    console.log(err);
+   }
     };
 
 

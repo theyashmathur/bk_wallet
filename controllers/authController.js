@@ -15,10 +15,13 @@ function generateReferralCode(length = 8) {
   for (let i = 0; i < length; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
+
+  console.log(code);
   return code;
 }
 
 function createReferralLink(referralCode, baseUrl = 'https://example.com/referral') {
+  console.log(`${baseUrl}?code=${referralCode}`)
   return `${baseUrl}?code=${referralCode}`;
 }
 
@@ -58,7 +61,10 @@ const register = async (req, res) => {
           // Generate OTPs
           const emailOtp = Math.floor(1000 + Math.random() * 9000).toString();
           const mobileOtp = Math.floor(1000 + Math.random() * 9000).toString();
-      
+
+          const uniqueReferralCode = await generateReferralCode();
+          const uniqueReferralLink =  await createReferralLink(uniqueReferralCode)
+       
           const newUser = new User({
             country,
             fullName,
@@ -71,8 +77,8 @@ const register = async (req, res) => {
             emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
             mobileOtp,
             mobileOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
-            referralCode : generateReferralCode,
-            referralLink : createReferralLink(generateReferralCode,)
+            referralCode : uniqueReferralCode,
+            referralLink : uniqueReferralLink
 
           });
       
