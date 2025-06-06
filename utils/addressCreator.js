@@ -63,21 +63,27 @@ const generateNextAddress = async (ownerId, userId) => {
 
     // const derivationPath = `m/44'/60'/0'/0/${index}`;
   
-    const mnemonicObj = Mnemonic.fromPhrase(owner.mnemonic);
-    const hdRoot = ethers.HDNodeWallet.fromMnemonic(mnemonicObj);
-    const childNode = hdRoot.derivePath(`m/44'/60'/0'/0/${nextIndex}`);
-    const wallet = new ethers.Wallet(childNode.privateKey);
+    const hdNode = ethers.HDNodeWallet.fromPhrase(owner.mnemonic);
+    const wallet = hdNode.deriveChild(nextIndex);
+    const path = `m/44'/60'/0'/0/${nextIndex}`;
+    const nextWallet = hdNode.derivePath(path);
+
+    
+        
+    // const hdRoot = ethers.HDNodeWallet.fromMnemonic(mnemonicObj);
+    // const childNode = hdRoot.derivePath(`m/44'/60'/0'/0/${nextIndex}`);
+    // const wallet = new ethers.Wallet(childNode.privateKey);
     // Encrypt the private key before saving
-    const encryptedPrivateKey = encrypt(wallet.privateKey);
+    const encryptedPrivateKey = encrypt(nextWallet.privateKey);
 
    try {
    const w_address =  await WalletAddress.create({
         // ownerId,
         ownerId: owner._id,  
         userId:userId,
-        address: wallet.address,
+        address: nextWallet.address,
         privateKey: encryptedPrivateKey,
-        derivationPath: `m/44'/60'/0'/0/${nextIndex}`,
+        derivationPath: path,
         // nextIndex
         index: nextIndex  
     });
