@@ -25,6 +25,7 @@
     "node-mailjet": "^6.0.8",
     "nodemailer": "^7.0.3",
     "swagger-ui-express": "^5.0.1",
+    "tronweb": "^6.0.3",
     "web3": "^4.16.0",
     "winston": "^3.17.0",
     "yamljs": "^0.3.0"

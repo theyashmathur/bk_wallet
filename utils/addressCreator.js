@@ -3,6 +3,7 @@ const app = express();
 const WalletOwner = require('./../models/WalletOwner');
 const WalletAddress = require('./../models/WalletAddress');
 const {ethers,Mnemonic} = require('ethers');
+const { TronWeb } = require('tronweb');
 
 const {encrypt,decrypt} = require('./encryption')
 
@@ -95,7 +96,37 @@ const generateNextAddress = async (ownerId, userId) => {
     };
 
 
-    module.exports = {
-        generateNextAddress :generateNextAddress,
-        createAddressForOwner : createAddressForOwner
-      }
+/// @note: This function creates a new Tron address for a user
+/// @param {string} ownerId - Admin user ID
+/// @param {string} userId - User ID for whom to generate the address
+const createTronAddress = async (userId) => {
+    try {
+        
+        const tronWeb = new TronWeb({
+            fullHost: "https://nile.tronscanapi.com"    // Testnet rpc url
+        });
+
+        // Create new Tron account
+        const account = tronWeb.createAccount();
+        console.log("Generated Tron address:", account.address.base58);
+
+        // Encrypt the private key before saving
+        const encryptedPrivateKey = encrypt(account.privateKey);
+
+        // Save the address to database
+        const address = await WalletAddress.create({});
+
+        console.log("New Tron wallet address created:", address);
+        return address;
+    } catch (error) {
+        console.error("Error in createTronAddress:", error);
+        throw error;
+    }
+};
+
+
+module.exports = {
+    generateNextAddress,
+    createAddressForOwner,
+    createTronAddress
+};
