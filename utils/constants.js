@@ -31,6 +31,14 @@ export const TOKENS = {
         network: "Ethereum",
         type: "NATIVE"
     },
+	TRON : {
+        address: "0x00",
+        decimals: 6,
+        symbol: "TRX",
+        name: "Tron",
+        network: "Tron",
+        type: "NATIVE"
+    },
     NFT :{
         address: "",
         symbol: "ETH",

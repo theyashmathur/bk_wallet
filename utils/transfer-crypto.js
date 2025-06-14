@@ -1,8 +1,9 @@
-
 const mongoose = require("mongoose");
 const ethers = require('ethers');
-const  WalletAddress =  require('./../models/WalletAddress');
-const { ERC20_ABI, TOKENS } = require('./constants.js') 
+const TronWeb = require('tronweb');
+const WalletAddress = require('./../models/WalletAddress');
+const { ERC20_ABI, TOKENS } = require('./constants.js');
+const { decrypt } = require('./encryption');
 const dotenv = require("dotenv");
 dotenv.config();
 
@@ -151,3 +152,93 @@ export const transferETH = async (toAddress, amount, userId) => {
         throw new Error("ETH transfer failed");
     }
 }
+
+/// @note: Transfer TRC20 tokens on Tron network
+/// @param {string} toAddress - Recipient's Tron address
+/// @param {number} amount - Amount of tokens to transfer
+/// @param {string} userId - User ID of the sender
+/// @param {string} tokenAddress - TRC20 token contract address
+export const transferTRC20Token = async (toAddress, amount, userId, tokenAddress) => {
+    try {
+        // Fetch token details
+        const token = findTokenDetails(tokenAddress);
+        if (!token) {
+            throw new Error("Token not found");
+        }
+
+        // Connect to MongoDB
+        await connectDB();
+
+        // Add check to find wallet address and initialze "walletAddress"
+
+        // Initialize TronWeb
+        const tronWeb = new TronWeb({
+            fullHost: "https://nile.trongrid.io" // Testnet
+        });
+
+        // Decrypt private key
+        const privateKey = decrypt(walletAddress.privateKey);
+        tronWeb.setPrivateKey(privateKey);
+
+        // Create contract instance
+        const contract = await tronWeb.contract().at(tokenAddress);
+
+        // Convert amount to proper decimals
+        const formattedAmount = amount * Math.pow(10, token.decimals);
+
+        // Check balance
+        const balance = await contract.balanceOf(walletAddress.address).call();
+        if (balance < formattedAmount) {
+            throw new Error("Insufficient balance");
+        }
+
+        // Transfer tokens
+        const tx = await contract.transfer(toAddress, formattedAmount).send();
+        console.log(`Transferred ${amount} ${token.symbol} from ${walletAddress.address} to ${toAddress}`);
+        
+        return tx;
+    } catch (error) {
+        console.error("Error transferring TRC20 tokens:", error);
+        throw error;
+    }
+};
+
+/// @note: Transfer TRX (native token) on Tron network
+/// @param {string} toAddress - Recipient's Tron address
+/// @param {number} amount - Amount of TRX to transfer
+/// @param {string} userId - User ID of the sender
+export const transferTRX = async (toAddress, amount, userId) => {
+    try {
+        // Connect to MongoDB
+        await connectDB();
+
+        // Add check to find wallet address and initialze "walletAddress"
+        
+        // Initialize TronWeb
+        const tronWeb = new TronWeb({
+            fullHost: "https://nile.trongrid.io" // Testnet
+        });
+
+        // Decrypt private key
+        const privateKey = decrypt(walletAddress.privateKey);
+        tronWeb.setPrivateKey(privateKey);
+
+        // Convert amount to SUN (1 TRX = 1000000 SUN)
+        const amountInSun = amount * 1000000;
+
+        // Check balance
+        const balance = await tronWeb.trx.getBalance(walletAddress.address);
+        if (balance < amountInSun) {
+            throw new Error("Insufficient balance");
+        }
+
+        // Transfer TRX
+        const tx = await tronWeb.trx.sendTransaction(toAddress, amountInSun);
+        console.log(`Transferred ${amount} TRX from ${walletAddress.address} to ${toAddress}`);
+        
+        return tx;
+    } catch (error) {
+        console.error("Error transferring TRX:", error);
+        throw error;
+    }
+};
